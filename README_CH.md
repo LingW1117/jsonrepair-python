@@ -6,30 +6,61 @@
 ## 特性
 
 - 修复 30+ 种常见 JSON 格式错误（缺引号、单引号、注释、末尾逗号等）
-- 自动提取 LLM 输出中嵌入的 JSON（过滤前后多余文字）
+- **自动提取 LLM 输出中嵌入的 JSON** — 无需单独调用函数，`jsonrepair` 自动处理多余文字
+- **修复裸键值对** — `姓名: 张三, 年龄: 30` → `{"姓名": "张三", "年龄": 30}`
+- **转换错误括号** — `[姓名: 张三]` → `{"姓名": "张三"}`
 - 流式处理大文件或实时数据流
 - 零依赖，仅需 Python 标准库
-- 无需 pip 安装，将 `jsonrepair/` 目录复制到项目中即可直接 `import` 使用
 - 代码整洁，测试覆盖充分（116 组参数化测试）
+
+## 安装
+
+**方式一 — pip 安装（推荐，可使用 CLI 命令）：**
+
+```bash
+# 从本地源码安装
+pip install .
+
+# 或构建 whl 后安装
+python -m build --wheel
+pip install dist/jsonrepair-*.whl
+```
+
+安装后可直接使用 `jsonrepair` 命令行：
+
+```bash
+jsonrepair broken.json -o repaired.json
+```
+
+**方式二 — 复制目录（免安装）：**
+
+将 `jsonrepair/` 目录复制到项目中即可直接 `import` 使用，无需 pip。
 
 ## 快速开始
 
 ```python
-from jsonrepair import extract_json, jsonrepair
+from jsonrepair import jsonrepair
 
 # 基本修复
-jsonrepair("{name: 'John'}")        # -> {"name": "John"}
+jsonrepair("{name: 'John'}")              # -> {"name": "John"}
 
-# 从 LLM 输出中提取 JSON
-llm = "好的，数据如下：\n{\n  name: 'Alice'\n}"
-extract_json(llm)                   # -> {"name": "Alice"}
+# 自动从 LLM 输出中提取 JSON（前后多余文字被忽略）
+jsonrepair("数据如下：\n{\n  name: 'Alice'\n}")  # -> {"name": "Alice"}
+
+# 裸键值对 — 自动补全花括号
+jsonrepair("姓名: 张三, 年龄: 30")        # -> {"姓名": "张三", "年龄": 30}
+
+# 对象被错误包在方括号中
+jsonrepair("[name: John, active: true]")   # -> {"name": "John", "active": true}
 ```
 
 ## API
 
 ### `jsonrepair(text: str) -> str`
 
-修复无效 JSON 字符串，返回合法 JSON。遇到无法修复的错误时抛出 `JSONRepairError`。
+修复无效 JSON，自动从多余文字中提取 JSON 结构。支持 LLM 输出中嵌入的 JSON、
+缺失花括号的裸键值对、被错误包在 `[...]` 中的对象等。
+遇到无法修复的错误时抛出 `JSONRepairError`。
 
 ```python
 from jsonrepair import jsonrepair, JSONRepairError
@@ -44,14 +75,7 @@ except JSONRepairError as e:
 
 ### `extract_json(text: str) -> str`
 
-从包含多余文字（如 LLM 输出）的文本中自动提取并修复 JSON 结构。跳过第一个 `{` 或 `[` 之前的内容，忽略 JSON 闭合后的尾部文字。
-
-```python
-from jsonrepair import extract_json
-
-llm_output = "这是数据：\n{name: 'test'}\n请查收"
-result = extract_json(llm_output)  # {"name": "test"}
-```
+`jsonrepair` 的别名，保留用于向后兼容。
 
 ### 流式 API
 
@@ -123,6 +147,9 @@ python -m jsonrepair.cli --help                         # 帮助信息
 | 截断数字 | `2.` → `2.0` |
 | 截断 JSON | `["foo` → `["foo"]` |
 | 转义字符串 | `\"hello\"` → `"hello"` |
+| 裸键值对 | `姓名: 张三, 年龄: 30` → `{"姓名": "张三", "年龄": 30}` |
+| 方括号转花括号 | `[name: John]` → `{"name": "John"}` |
+| 自动提取 | `文本 {"a":1} 文本` → `{"a":1}` |
 
 ## 运行测试
 
@@ -135,10 +162,12 @@ python -m pytest tests/ -v
 
 ```
 jsonrepair-python/
-├── demo.py                     # 功能演示（英文）
-├── demo_CH.py                  # 功能演示（中文）
-├── README.md                   # 英文文档
-├── README_CH.md                # 中文文档
+├── demo.py                              # 功能演示（英文）
+├── demo_CH.py                           # 功能演示（中文）
+├── ExceptLLmOutputRepair_Demo.py        # LLM 修复演示（英文）
+├── ExceptLLmOutputRepair_Demo_CH.py     # LLM 修复演示（中文）
+├── README.md                            # 英文文档
+├── README_CH.md                         # 中文文档
 ├── pyproject.toml
 ├── jsonrepair/
 │   ├── __init__.py             # 导出: jsonrepair, extract_json, JSONRepairError

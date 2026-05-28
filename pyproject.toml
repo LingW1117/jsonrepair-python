@@ -1,13 +1,13 @@
 [build-system]
 requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "jsonrepair"
-version = "0.1.0"
-description = "Repair invalid JSON documents"
+version = "0.2.0"
+description = "Repair invalid JSON documents — auto-extract JSON from LLM outputs, fix 30+ common formatting errors"
 readme = "README.md"
-license = {text = "ISC"}
+license = "ISC"
 requires-python = ">=3.9"
 authors = [
     {name = "Jos de Jong"},
@@ -18,6 +18,7 @@ jsonrepair = "jsonrepair.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["jsonrepair*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

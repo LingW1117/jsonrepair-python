@@ -6,7 +6,7 @@ Run directly without installation:
 """
 import json
 
-from jsonrepair import extract_json, jsonrepair, JSONRepairError
+from jsonrepair import jsonrepair, JSONRepairError
 
 # ============================================================
 # 1. Basic Repair
@@ -79,11 +79,13 @@ for bad in ["", '{"a",', '{:2}']:
         print(f"  {bad!r:20s} -> {e}")
 
 # ============================================================
-# 4. extract_json: LLM Output Extraction
+# 4. Auto-extract JSON from LLM Output
 # ============================================================
 print("\n" + "=" * 60)
-print("4. extract_json - Extract JSON from LLM Output")
+print("4. Auto-extract JSON from LLM Output")
 print("=" * 60)
+print("  jsonrepair now auto-extracts JSON from surrounding text:")
+print()
 
 # Simulate LLM response with JSON wrapped in natural language
 raw_llm = """Sure, here is the customer info you requested:
@@ -105,27 +107,29 @@ Let me know if you need any adjustments."""
 print("Raw LLM output (with extra text):")
 print(raw_llm)
 
-result = extract_json(raw_llm)
+result = jsonrepair(raw_llm)
 data = json.loads(result)
 print("Extracted result:")
 print(json.dumps(data, ensure_ascii=False, indent=2))
 
 # ============================================================
-# 5. extract_json: More Scenarios
+# 5. Auto-extract: More Scenarios
 # ============================================================
 print("\n" + "=" * 60)
-print("5. extract_json - More Scenarios")
+print("5. Auto-extract - More Scenarios")
 print("=" * 60)
 
 scenarios = [
     ("Text before JSON",  "json\n{\"a\": 1}"),
-    ("Text after JSON",   "{\"a\": 1}\nHope this helps!"),
     ("Text around JSON",  "Here you go:\n{\"a\": 1}\nDone."),
+    ("JSON with comment", "/* info */ {\"a\": 1}"),
     ("JSON only",         "{\"a\": 1}"),
+    ("Missing braces",    "name: Alice, age: 28"),
+    ("Bracket convert",   "[name: John, active: true]"),
 ]
 
 for name, raw in scenarios:
-    result = extract_json(raw)
+    result = jsonrepair(raw)
     print(f"  [{name}] {raw!r:40s} -> {result}")
 
 # ============================================================

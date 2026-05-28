@@ -6,30 +6,61 @@ Finished By Claude code + Deepseek v4 pro
 ## Features
 
 - Fixes 30+ common JSON formatting errors (missing quotes, single quotes, comments, trailing commas, etc.)
-- Auto-extracts JSON embedded in LLM outputs (filters surrounding text before/after JSON)
+- **Auto-extracts JSON embedded in LLM outputs** — no separate function needed, `jsonrepair` handles surrounding text automatically
+- **Repairs bare key:value pairs** — wraps `name: John, age: 30` into `{"name": "John", "age": 30}`
+- **Converts misused brackets** — `[name: John]` → `{"name": "John"}`
 - Streaming API for large files or real-time data
 - Zero dependencies — stdlib only
-- No pip install needed — just copy the `jsonrepair/` directory into your project and `import` directly
 - Clean, well-tested codebase (116 parameterized tests)
+
+## Installation
+
+**Option 1 — pip install (recommended, enables CLI):**
+
+```bash
+# Install from local source
+pip install .
+
+# Or build and install wheel
+python -m build --wheel
+pip install dist/jsonrepair-*.whl
+```
+
+After installation, the `jsonrepair` CLI command is available:
+
+```bash
+jsonrepair broken.json -o repaired.json
+```
+
+**Option 2 — copy directory (zero install):**
+
+Just copy the `jsonrepair/` directory into your project and `import` directly. No pip needed.
 
 ## Quick Start
 
 ```python
-from jsonrepair import extract_json, jsonrepair
+from jsonrepair import jsonrepair
 
 # Basic repair
-jsonrepair("{name: 'John'}")        # -> {"name": "John"}
+jsonrepair("{name: 'John'}")           # -> {"name": "John"}
 
-# Extract JSON from LLM output
-llm = "Here's the data:\n{\n  name: 'Alice'\n}"
-extract_json(llm)                   # -> {"name": "Alice"}
+# Auto-extract JSON from LLM output (text before/after JSON is ignored)
+jsonrepair("Here's the data:\n{\n  name: 'Alice'\n}")  # -> {"name": "Alice"}
+
+# Bare key:value pairs — missing braces are added automatically
+jsonrepair("name: John, age: 30")      # -> {"name": "John", "age": 30}
+
+# Objects mistakenly wrapped in [...] brackets
+jsonrepair("[name: John, active: true]")  # -> {"name": "John", "active": true}
 ```
 
 ## API
 
 ### `jsonrepair(text: str) -> str`
 
-Repair an invalid JSON string. Throws `JSONRepairError` for unrepairable inputs.
+Repair invalid JSON with automatic extraction from surrounding text. Handles JSON
+embedded in LLM outputs, missing brackets, bare key:value pairs, and objects
+mistakenly wrapped in ``[...]``. Throws `JSONRepairError` for unrepairable inputs.
 
 ```python
 from jsonrepair import jsonrepair, JSONRepairError
@@ -44,14 +75,7 @@ except JSONRepairError as e:
 
 ### `extract_json(text: str) -> str`
 
-Extract and repair a JSON structure from text that contains extra content (e.g. LLM outputs). Skips text before the first `{` or `[` and ignores trailing text after the JSON structure closes.
-
-```python
-from jsonrepair import extract_json
-
-llm_output = "Here's your data:\n{name: 'test'}\nHope this helps"
-result = extract_json(llm_output)  # {"name": "test"}
-```
+Alias for `jsonrepair`. Kept for backward compatibility.
 
 ### Streaming API
 
@@ -123,6 +147,9 @@ python -m jsonrepair.cli --help                         # Help message
 | Truncated numbers | `2.` → `2.0` |
 | Truncated JSON | `["foo` → `["foo"]` |
 | Escaped strings | `\"hello\"` → `"hello"` |
+| Bare key:value pairs | `name: John, age: 30` → `{"name": "John", "age": 30}` |
+| `[...]` to `{...}` conversion | `[name: John]` → `{"name": "John"}` |
+| Auto-extract from text | `text {"a":1} text` → `{"a":1}` |
 
 ## Running Tests
 
@@ -135,10 +162,12 @@ python -m pytest tests/ -v
 
 ```
 jsonrepair-python/
-├── demo.py                     # Feature demo (English)
-├── demo_CH.py                  # Feature demo (Chinese)
-├── README.md                   # English documentation
-├── README_CH.md                # 中文文档
+├── demo.py                              # Feature demo (English)
+├── demo_CH.py                           # Feature demo (Chinese)
+├── ExceptLLmOutputRepair_Demo.py        # LLM output repair demo (English)
+├── ExceptLLmOutputRepair_Demo_CH.py     # LLM output repair demo (中文)
+├── README.md                            # English documentation
+├── README_CH.md                         # 中文文档
 ├── pyproject.toml
 ├── jsonrepair/
 │   ├── __init__.py             # exports: jsonrepair, extract_json, JSONRepairError

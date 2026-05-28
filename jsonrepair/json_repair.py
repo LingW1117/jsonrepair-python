@@ -49,26 +49,130 @@ _escape_characters = {
 
 
 def jsonrepair(text: str) -> str:
-    """Repair a string containing an invalid JSON document."""
-    return _jsonrepair_inner(text)
+    """Repair invalid JSON, with automatic extraction from surrounding text.
+
+    Handles JSON embedded in natural language (LLM outputs), missing
+    brackets, and objects mistakenly wrapped in ``[...]`` brackets.
+    """
+    bracket_pos, bracket_char = _find_first_json_bracket(text)
+
+    # ---- bracket-starting text -------------------------------------------
+
+    # Text starting with '[' — check if content is really key:value pairs
+    if bracket_char == "[":
+        inner = _extract_bracket_content(text[bracket_pos:])
+        if inner is not None and _has_key_value_pattern(inner):
+            return _jsonrepair_inner("{" + inner + "}", allow_trailing=True)
+
+    # ---- bracketless text ------------------------------------------------
+
+    if bracket_pos is None:
+        if _has_key_value_pattern(text):
+            try:
+                return _jsonrepair_inner("{" + text + "}", allow_trailing=True)
+            except JSONRepairError:
+                pass
+        return _jsonrepair_inner(text)
+
+    # ---- text with braces — plain repair or extract ----------------------
+
+    # Always try plain repair first (handles comments, JSONP, markdown, etc.)
+    try:
+        result = _jsonrepair_inner(text)
+        # If plain repair produced a newline-delimited array but the text
+        # had meaningful content before the bracket, prefer extraction
+        if _prefix_is_insignificant(text, bracket_pos):
+            return result
+        # Check if result looks like an array wrapping natural language text
+        if result.startswith("[") and not text[:bracket_pos].strip().startswith("["):
+            # Might have captured natural language as array elements.
+            # Fall through to extraction.
+            pass
+        else:
+            return result
+    except JSONRepairError:
+        pass
+
+    # Extract JSON from surrounding text
+    return _jsonrepair_inner(text[bracket_pos:], allow_trailing=True)
 
 
 def extract_json(text: str) -> str:
-    """Extract and repair a JSON structure from text with extra content.
+    """Extract and repair JSON from text. Alias for :func:`jsonrepair`."""
+    return jsonrepair(text)
 
-    Strips any text before the first '{' or '[', and any text after
-    the JSON structure closes. Useful for parsing LLM outputs that
-    contain JSON embedded in natural language.
-    """
-    # Find first JSON structure start
-    first_brace = text.find("{")
-    first_bracket = text.find("[")
-    candidates = [i for i in (first_brace, first_bracket) if i != -1]
-    if not candidates:
-        raise JSONRepairError("No JSON structure found in text", 0)
 
-    start = min(candidates)
-    return _jsonrepair_inner(text[start:], allow_trailing=True)
+def _extract_bracket_content(text: str):
+    """Return content between matching ``[...]`` brackets, or *None*."""
+    depth = 0
+    for i, ch in enumerate(text):
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                return text[1:i]
+    return None
+
+
+_re_insignificant = re.compile(
+    r"^(?:\s|//[^\n]*|/\*.*?\*/)*$", re.DOTALL
+)
+
+
+def _prefix_is_insignificant(text: str, bracket_pos: int):
+    """Return *True* if the text before *bracket_pos* is only whitespace
+    and comments (no meaningful content to strip)."""
+    if bracket_pos == 0:
+        return True
+    return bool(_re_insignificant.match(text[:bracket_pos]))
+
+
+def _find_first_json_bracket(text: str):
+    """Return ``(position, char)`` of the first ``{`` or ``[`` that is
+    not inside a string, or ``(None, None)`` if none found."""
+    in_string = False
+    string_char = None
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if in_string:
+            if ch == "\\":
+                i += 1  # skip escaped char (loop increment adds the second)
+            elif ch == string_char:
+                in_string = False
+        elif ch in ('"', "'"):
+            in_string = True
+            string_char = ch
+        elif ch in ("{", "["):
+            return i, ch
+        i += 1
+    return None, None
+
+
+def _has_key_value_pattern(text: str):
+    """Return *True* if *text* contains a ``:`` outside of quotes and at
+    depth 0, excluding URL schemes (``://``)."""
+    in_string = False
+    string_char = None
+    depth = 0
+    for i, ch in enumerate(text):
+        if in_string:
+            if ch == string_char:
+                in_string = False
+        elif ch in ('"', "'"):
+            in_string = True
+            string_char = ch
+        elif ch in ("[", "{"):
+            depth += 1
+        elif ch in ("]", "}"):
+            depth -= 1
+        elif ch == ":" and depth == 0:
+            # Skip URL schemes (e.g. https://)
+            if i + 2 < len(text) and text[i + 1 : i + 3] == "//":
+                continue
+            return True
+    return False
 
 
 def _jsonrepair_inner(text: str, allow_trailing: bool = False) -> str:

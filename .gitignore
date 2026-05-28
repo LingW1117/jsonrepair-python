@@ -1,0 +1,15 @@
+# IDE
+.idea/
+
+# Claude Code
+.claude/
+
+# Python cache
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

@@ -6,7 +6,7 @@ jsonrepair 功能演示
 """
 import json
 
-from jsonrepair import extract_json, jsonrepair, JSONRepairError
+from jsonrepair import jsonrepair, JSONRepairError
 
 # ============================================================
 # 1. 基本修复
@@ -79,11 +79,13 @@ for bad in ["", '{"a",', '{:2}']:
         print(f"  {bad!r:20s} -> {e}")
 
 # ============================================================
-# 4. extract_json: LLM 输出提取
+# 4. 自动提取：从 LLM 输出中提取 JSON
 # ============================================================
 print("\n" + "=" * 60)
-print("4. extract_json - 从 LLM 输出中提取 JSON")
+print("4. 自动提取 - 从 LLM 输出中提取 JSON")
 print("=" * 60)
+print("  jsonrepair 现在能自动从多余文字中提取 JSON：")
+print()
 
 # 模拟 LLM 在 JSON 前后夹杂自然语言
 raw_llm = """好的，根据您的要求，以下是客户信息：
@@ -105,27 +107,29 @@ raw_llm = """好的，根据您的要求，以下是客户信息：
 print("原始 LLM 输出 (含多余文字):")
 print(raw_llm)
 
-result = extract_json(raw_llm)
+result = jsonrepair(raw_llm)
 data = json.loads(result)
 print("提取结果:")
 print(json.dumps(data, ensure_ascii=False, indent=2))
 
 # ============================================================
-# 5. extract_json 更多场景
+# 5. 自动提取：更多场景
 # ============================================================
 print("\n" + "=" * 60)
-print("5. extract_json 更多场景")
+print("5. 自动提取 - 更多场景")
 print("=" * 60)
 
 scenarios = [
     ("前面有文字",     "json\n{\"a\": 1}"),
-    ("后面有文字",     "{\"a\": 1}\nHope this helps!"),
     ("前后都有文字",   "Here you go:\n{\"a\": 1}\nDone."),
+    ("带注释的JSON",   "/* info */ {\"a\": 1}"),
     ("只有 JSON",      "{\"a\": 1}"),
+    ("缺花括号",       "名称: 张三, 年龄: 30"),
+    ("方括号转花括号", "aaa[name: John, active: true]"),
 ]
 
 for name, raw in scenarios:
-    result = extract_json(raw)
+    result = jsonrepair(raw)
     print(f"  [{name}] {raw!r:40s} -> {result}")
 
 # ============================================================
