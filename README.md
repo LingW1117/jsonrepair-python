@@ -39,7 +39,7 @@ Just copy the `jsonrepair/` directory into your project and `import` directly. N
 ## Quick Start
 
 ```python
-from jsonrepair import jsonrepair
+import jsonrepair
 
 # Basic repair
 jsonrepair("{name: 'John'}")           # -> {"name": "John"}
@@ -63,12 +63,12 @@ embedded in LLM outputs, missing brackets, bare key:value pairs, and objects
 mistakenly wrapped in ``[...]``. Throws `JSONRepairError` for unrepairable inputs.
 
 ```python
-from jsonrepair import jsonrepair, JSONRepairError
+import jsonrepair
 
 try:
     result = jsonrepair("{name: 'John'}")
     print(result)  # {"name": "John"}
-except JSONRepairError as e:
+except jsonrepair.JSONRepairError as e:
     print(e)           # Error message with position
     print(e.position)  # Character position where the error occurred
 ```

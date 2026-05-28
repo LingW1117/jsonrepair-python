@@ -10,7 +10,7 @@ Usage:
 """
 import json
 
-from jsonrepair import jsonrepair, JSONRepairError
+import jsonrepair
 
 SEP = "=" * 65
 
@@ -314,7 +314,7 @@ for raw in unrepairable:
     try:
         jsonrepair(raw)
         print(f"  {raw!r:20s} -> unexpectedly succeeded!")
-    except JSONRepairError as e:
+    except jsonrepair.JSONRepairError as e:
         print(f"  {raw!r:20s} -> JSONRepairError: {e}")
 
 

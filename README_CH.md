@@ -39,7 +39,7 @@ jsonrepair broken.json -o repaired.json
 ## 快速开始
 
 ```python
-from jsonrepair import jsonrepair
+import jsonrepair
 
 # 基本修复
 jsonrepair("{name: 'John'}")              # -> {"name": "John"}
@@ -63,12 +63,12 @@ jsonrepair("[name: John, active: true]")   # -> {"name": "John", "active": true}
 遇到无法修复的错误时抛出 `JSONRepairError`。
 
 ```python
-from jsonrepair import jsonrepair, JSONRepairError
+import jsonrepair
 
 try:
     result = jsonrepair("{name: 'John'}")
     print(result)  # {"name": "John"}
-except JSONRepairError as e:
+except jsonrepair.JSONRepairError as e:
     print(e)          # 错误信息（含位置）
     print(e.position)  # 出错字符位置
 ```

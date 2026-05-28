@@ -6,7 +6,7 @@ Run directly without installation:
 """
 import json
 
-from jsonrepair import jsonrepair, JSONRepairError
+import jsonrepair
 
 # ============================================================
 # 1. Basic Repair
@@ -75,7 +75,7 @@ print("=" * 60)
 for bad in ["", '{"a",', '{:2}']:
     try:
         jsonrepair(bad)
-    except JSONRepairError as e:
+    except jsonrepair.JSONRepairError as e:
         print(f"  {bad!r:20s} -> {e}")
 
 # ============================================================
