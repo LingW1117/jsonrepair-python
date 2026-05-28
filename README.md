@@ -2,22 +2,15 @@
 
 Repair invalid JSON documents. A Python port of [jsonrepair](https://github.com/josdejong/jsonrepair) (TypeScript).
 
+Finished By Claude code + Deepseek v4 pro
 ## Features
 
 - Fixes 30+ common JSON formatting errors (missing quotes, single quotes, comments, trailing commas, etc.)
 - Auto-extracts JSON embedded in LLM outputs (filters surrounding text before/after JSON)
 - Streaming API for large files or real-time data
 - Zero dependencies — stdlib only
-- No installation required — copy the `jsonrepair/` directory and `import` directly
+- No pip install needed — just copy the `jsonrepair/` directory into your project and `import` directly
 - Clean, well-tested codebase (116 parameterized tests)
-
-## Installation
-
-```bash
-pip install jsonrepair
-```
-
-Or simply copy the `jsonrepair/` directory into your project — it has no external dependencies.
 
 ## Quick Start
 

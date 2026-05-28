@@ -2,22 +2,15 @@
 
 修复无效 JSON 文档的 Python 库，是 [jsonrepair](https://github.com/josdejong/jsonrepair) (TypeScript) 的 Python 移植版。
 
+由Claude code + Deepseek v4 pro完成
 ## 特性
 
 - 修复 30+ 种常见 JSON 格式错误（缺引号、单引号、注释、末尾逗号等）
 - 自动提取 LLM 输出中嵌入的 JSON（过滤前后多余文字）
 - 流式处理大文件或实时数据流
 - 零依赖，仅需 Python 标准库
-- 无需安装，复制 `jsonrepair/` 目录即可直接 `import` 使用
+- 无需 pip 安装，将 `jsonrepair/` 目录复制到项目中即可直接 `import` 使用
 - 代码整洁，测试覆盖充分（116 组参数化测试）
-
-## 安装
-
-```bash
-pip install jsonrepair
-```
-
-或者直接将 `jsonrepair/` 目录复制到项目中即可使用，无任何外部依赖。
 
 ## 快速开始
 
